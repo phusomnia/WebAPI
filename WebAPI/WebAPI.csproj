@@ -8,9 +8,18 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
-        <PackageReference Include="MySql.Data" Version="9.1.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.3.efcore.9.0.0" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.5.3" />
     </ItemGroup>
 
@@ -22,8 +31,6 @@
 
     <ItemGroup>
       <Folder Include="Features\Auth\" />
-      <Folder Include="Features\Manga\controller\" />
-      <Folder Include="Features\Manga\service\" />
       <Folder Include="Middlewares\" />
     </ItemGroup>
 

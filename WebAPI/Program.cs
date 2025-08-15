@@ -1,73 +1,90 @@
-using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
+using WebAPI.Context;
+using Microsoft.EntityFrameworkCore;
+using WebAPI.Annotation;
+using WebAPI.Core;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-
+builder.Services.AddAnnotation(Assembly.GetExecutingAssembly());
 // TODO: Build Logger
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
-
 // Load only the development appsettings
 builder.Configuration.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
-
 // [SERVICES]
+// Ignore null 
+builder.Services.ConfigureHttpJsonOptions(options => 
+{
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+// allow snakecase 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
+});
+// 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
-// TODO: Config Bearer
+// config openapi security scheme
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
 builder.Services.AddOpenApi();
-// TODO: implement db service
-
-
+// database context
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(
+    defaultConnection,
+    ServerVersion.AutoDetect(defaultConnection)
+));
 var app = builder.Build();
-
-// Get the logger
-// var log = app.Services.GetRequiredService<ILogger<Program>>();
-// log.LogInformation("Starting web host");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
-
-
+// [SECURITY]
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+// [ROUTING]
 app.MapControllers();
-
 // TODO: Config JWT
 // TODO: Config dyanmic DI 
 // TODO: Config dynamic endpoint
-
-app.MapGet("/", () => "Hello World!");
-// Todo: Check connection from db
-app.MapGet("/checkConnection", () =>
+// redirect at / -> scalar/v1
+app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
+// check connection if default string is valid
+app.MapGet("/checkConnection", (AppDbContext ctx) =>
 {
-    return "abc";
+    var canConnect = ctx.Database.CanConnect();
+    return canConnect ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database");
 });
-app.MapGet("/testConfig", () =>
+app.MapPost("/test", ([FromQuery] BaseStatus res) =>
 {
-    return builder.Configuration["Test"];
+    APIResponse<dynamic> response = new APIResponse<dynamic>(
+        res,
+        null,
+        "1"
+    );
+    return Results.Ok(response);
 });
-
 app.Run();
-
-// Todo: Security Scheme
+// [SECURITY SCHEME]
 internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiDocumentTransformer
 {
     public async Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)

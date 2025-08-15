@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WebAPI.Context;
 
 namespace WebAPI.Features.Manga;
 
@@ -6,12 +8,20 @@ namespace WebAPI.Features.Manga;
 [Route("api/v1/[controller]")]
 public class MangaController : ControllerBase
 {
-    
-    [HttpGet]
-    public async Task<ActionResult> getMangaAPI()
+    private MangaService _mangaService;
+
+    public MangaController(MangaService mangaService)
     {
-        await Task.Delay(10);
-        return Ok("Get manga");
+        _mangaService = mangaService;
+    }
+
+    [HttpGet]
+    public IActionResult getMangaAPI(
+        String id
+    )
+    {
+        var res = _mangaService.getManga(id);
+        return Ok(res);
     }
     
     [HttpPost]
