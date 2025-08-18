@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using WebAPI.Entities;
 
 namespace WebAPI.Context;
@@ -12,14 +14,14 @@ public partial class AppDbContext : DbContext
         _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "";
     }
     
+    public virtual DbSet<Account> Account { get; set; }
+    
+    public virtual DbSet<Manga> Manga { get; set; }
+    
+    public virtual DbSet<RefreshToken> RefreshToken { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder
             .UseMySql(_connectionString, ServerVersion.AutoDetect(_connectionString))
-            .UseSnakeCaseNamingConvention();
-    
-    public virtual DbSet<Account> Account { get; set; }
-
-    public virtual DbSet<Manga> Manga { get; set; }
-
-    public virtual DbSet<RefreshToken> RefreshToken { get; set; }
+            .UseCamelCaseNamingConvention();
 }

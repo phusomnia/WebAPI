@@ -11,6 +11,9 @@ public class RepositoryAttribute : Attribute { }
 [AttributeUsage(AttributeTargets.Class)]
 public class ComponentAttribute : Attribute { }
 
+[AttributeUsage(AttributeTargets.Class)]
+public class ConfigurationAttribute : Attribute { }
+
 public static class AnnotationExtension
 {
     public static IServiceCollection AddAnnotation(

@@ -2,3 +2,4 @@
 WebAPI/bin
 WebAPI/obj
 WebAPI/appsettings.Development.json
+migrate.sh

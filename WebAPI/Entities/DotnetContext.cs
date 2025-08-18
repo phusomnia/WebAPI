@@ -4,14 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebAPI.Entities;
 
-public partial class DemoContext : DbContext
+public partial class DotnetContext : DbContext
 {
-    public DemoContext(DbContextOptions<DemoContext> options)
+    public DotnetContext(DbContextOptions<DotnetContext> options)
         : base(options)
     {
     }
 
     public virtual DbSet<Account> Accounts { get; set; }
+
+    public virtual DbSet<EfmigrationsHistory> EfmigrationsHistories { get; set; }
 
     public virtual DbSet<Manga> Mangas { get; set; }
 
@@ -27,54 +29,75 @@ public partial class DemoContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
-            entity.ToTable("account");
+            entity.ToTable("Account");
+
+            entity.HasIndex(e => e.Username, "username").IsUnique();
 
             entity.Property(e => e.Id)
                 .HasMaxLength(36)
                 .HasColumnName("id");
-            entity.Property(e => e.Password)
+            entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
-                .HasColumnName("password");
+                .HasColumnName("passwordHash")
+                .UseCollation("utf8mb3_general_ci")
+                .HasCharSet("utf8mb3");
             entity.Property(e => e.Roles)
-                .HasColumnType("enum('Admin','User')")
+                .HasColumnType("enum('User','Admin')")
                 .HasColumnName("roles");
             entity.Property(e => e.Username)
-                .HasMaxLength(255)
-                .HasColumnName("username");
+                .HasColumnName("username")
+                .UseCollation("utf8mb3_general_ci")
+                .HasCharSet("utf8mb3");
+        });
+
+        modelBuilder.Entity<EfmigrationsHistory>(entity =>
+        {
+            entity.HasKey(e => e.MigrationId).HasName("PRIMARY");
+
+            entity.ToTable("__EFMigrationsHistory");
+
+            entity.Property(e => e.MigrationId)
+                .HasMaxLength(150)
+                .HasColumnName("migrationId");
+            entity.Property(e => e.ProductVersion)
+                .HasMaxLength(32)
+                .HasColumnName("productVersion");
         });
 
         modelBuilder.Entity<Manga>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
-            entity.ToTable("manga");
+            entity.ToTable("Manga");
 
             entity.Property(e => e.Id)
                 .HasMaxLength(36)
                 .HasColumnName("id");
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
-                .HasColumnName("title");
+                .HasColumnName("title")
+                .UseCollation("utf8mb3_general_ci")
+                .HasCharSet("utf8mb3");
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
-            entity.ToTable("refresh_token");
-
-            entity.HasIndex(e => e.Token, "UKr4k4edos30bx9neoq81mdvwph").IsUnique();
+            entity.ToTable("RefreshToken");
 
             entity.Property(e => e.Id)
                 .HasMaxLength(36)
                 .HasColumnName("id");
             entity.Property(e => e.AccountId)
                 .HasMaxLength(36)
-                .HasColumnName("account_id");
-            entity.Property(e => e.ExpriyDate)
-                .HasMaxLength(6)
-                .HasColumnName("expriy_date");
-            entity.Property(e => e.Token).HasColumnName("token");
+                .HasColumnName("accountId");
+            entity.Property(e => e.ExpiryDate)
+                .HasColumnType("datetime")
+                .HasColumnName("expiryDate");
+            entity.Property(e => e.Token)
+                .HasMaxLength(36)
+                .HasColumnName("token");
         });
 
         OnModelCreatingPartial(modelBuilder);
