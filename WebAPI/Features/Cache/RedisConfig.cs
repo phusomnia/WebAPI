@@ -2,7 +2,6 @@ using StackExchange.Redis;
 
 namespace WebAPI.Features.Cache;
 using WebAPI.Annotation;
-using NRedisStack;
 
 [Configuration]
 public class RedisConfig

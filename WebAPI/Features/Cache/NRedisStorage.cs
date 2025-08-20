@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using NRedisStack.RedisStackCommands;
 using NRedisStack.Search;
 using NRedisStack.Search.Aggregation;
@@ -20,6 +18,27 @@ public class NRedisStorage : ICacheBase
         _redis = config.redis();
     }
 
+
+    public Object? get(string key)
+    {
+        RedisValue value = _redis.StringGet(key);
+        Console.WriteLine($"Value: {value.ToString()}");
+
+        if (value.IsNullOrEmpty)
+        {
+            throw new KeyNotFoundException($"The key '{key}' was not found");
+        }
+
+        return JsonSerializer.Deserialize<Object>(value!);
+    }
+    
+    public Boolean set(string key, object value)
+    {
+        RedisValue redisValue = (RedisValue)JsonSerializer.Serialize(value);
+        Boolean result = _redis.StringSet(key, redisValue);
+        return result;
+    }
+    
     public Object test()
     {
         var user1 = new
@@ -100,23 +119,4 @@ public class NRedisStorage : ICacheBase
         return formatedResult;
     }
 
-    public Boolean set(string key, object value)
-    {
-        RedisValue redisValue = (RedisValue)JsonSerializer.Serialize(value);
-        Boolean result = _redis.StringSet(key, redisValue);
-        return result;
-    }
-
-    public Object? get(string key)
-    {
-        RedisValue value = _redis.StringGet(key);
-        Console.WriteLine($"Value: {value.ToString()}");
-
-        if (value.IsNullOrEmpty)
-        {
-            throw new KeyNotFoundException($"The key '{key}' was not found");
-        }
-
-        return JsonSerializer.Deserialize<Object>(value!);
-    }
 }
