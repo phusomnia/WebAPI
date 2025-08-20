@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SignalR</title>
+</head>
+<body>
+    <h1>SignalR Chat</h1>
+    <div id="message"></div>
+    <input type="text" id="groupInput" placeholder="Group name" />
+    <button onclick="joinGroup()">Join Group</button>
+    <!-- <button onclick="leaveGroup()">Leave Group</button> -->
+    <br>
+    <input type="text" id="messageInput" placeholder="Type your message" />
+    <button onclick="sendMessage()">Send</button>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+<script>
+    const conn = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    conn.on("ReceiveMsg", (user, message) => {
+       const msg = document.createElement("div");
+       msg.textContent = `${user}: ${message}`;
+       document.getElementById("message").appendChild(msg);
+    });
+    
+    async function joinGroup()
+    {
+        const groupName = document.getElementById("groupInput").value;
+        console.log(groupName);
+        await conn.invoke("JoinGroup", "User", groupName);
+    }
+    
+    // async function leaveGroup()
+    // {
+    //     const groupName = document.getElementById("groupInput")
+    // }
+    
+    async function sendMessage()
+    {
+        const message = document.getElementById("messageInput").value;
+        await conn.invoke("SendMessageToGroup", "User", message);
+        document.getElementById("messageInput").value = "";
+    }
+
+    conn.start().catch(err => console.error(err))
+</script>
+</html>

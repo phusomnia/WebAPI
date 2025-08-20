@@ -1,0 +1,1 @@
+curl -H "Header-Name: kek" http://localhost:3000/middleware

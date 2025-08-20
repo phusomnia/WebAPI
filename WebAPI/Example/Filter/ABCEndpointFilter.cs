@@ -11,9 +11,9 @@ public abstract class ABCEndpointFilter : IEndpointFilter
     
     public ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        Console.WriteLine("{0} before next", _methodName);
+        Console.WriteLine($"{_methodName} before next");
         var result = next(context);
-        Console.WriteLine("{0} after next", _methodName);
+        Console.WriteLine($"{_methodName} after next");
         return result;
     }
 }

@@ -26,7 +26,8 @@ public static class AnnotationExtension
             var types = assesembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract &&
                                                         (t.GetCustomAttribute<ServiceAttribute>() != null ||
                                                          t.GetCustomAttribute<RepositoryAttribute>() != null ||
-                                                         t.GetCustomAttribute<ComponentAttribute>() != null)
+                                                         t.GetCustomAttribute<ComponentAttribute>() != null ||
+                                                         t.GetCustomAttribute<ConfigurationAttribute>() != null)
             );
 
             foreach (var type in types)

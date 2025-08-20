@@ -3,16 +3,9 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace WebAPI.Example;
 
-public class ExecutionTimeLogger : Attribute, IActionFilter
+public class CustomActionFilter : IActionFilter
 {
-    private Stopwatch _stopwatch;
-    private readonly ILogger<ExecutionTimeLogger> _logger;
-
-    public ExecutionTimeLogger(ILogger<ExecutionTimeLogger> logger)
-    {
-        _logger = logger;
-    }
-    
+    private Stopwatch _stopwatch = new Stopwatch();
     // Async version
     // public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     // {
@@ -25,15 +18,14 @@ public class ExecutionTimeLogger : Attribute, IActionFilter
 
     public void OnActionExecuting(ActionExecutingContext ctx)
     {
-        _logger.LogInformation("ExecutionTimeLogger filter is executing.");
+        Console.WriteLine("ExecutionTimeLogger filter is executing.");
         _stopwatch = Stopwatch.StartNew();
     }
-    
+
     public void OnActionExecuted(ActionExecutedContext ctx)
     {
         _stopwatch.Stop();
         var elapsedMs = _stopwatch.ElapsedMilliseconds;
         Console.WriteLine($"{ctx.ActionDescriptor.DisplayName}: {elapsedMs} ms");
-        _logger.LogInformation($"{ctx.ActionDescriptor.DisplayName}: {elapsedMs} ms");
     }
 }

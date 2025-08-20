@@ -16,10 +16,15 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using StackExchange.Redis;
 using WebAPI;
 using WebAPI.Config;
 using WebAPI.Entities;
 using WebAPI.Example;
+using WebAPI.Example.Cache;
+using WebAPI.Features.Cache;
+using WebAPI.Features.RealTime;
+using WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -53,10 +58,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
-});   
+});
 
 // Add identity
-builder.Services.AddDefaultIdentity<IdentityUser>(options => 
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
         options.SignIn.RequireConfirmedAccount = true
 ).AddEntityFrameworkStores<AppDbContext>();
 
@@ -65,7 +70,7 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
-builder.Services.AddOpenApi();   
+builder.Services.AddOpenApi();
 
 // Scope of service
 builder.Services.AddScoped<PasswordHasher<Account>>();
@@ -79,7 +84,11 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(
 builder.Services.AddDbContext<CustomIdentityDbContext>(options => options.UseMySql(
     defaultConnection,
     ServerVersion.AutoDetect(defaultConnection)
-));    
+));
+
+// Config cache
+// Register Redis connection
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetValue<string>("Redis")));
 
 // Config auth service
 var secretKey = builder.Configuration["Jwt:SecretKey"]!;
@@ -109,10 +118,14 @@ builder.Services.AddAuthorization(options =>
     // options.AddPolicy("Admin", policy => policy.RequireClaim("CTO").RequireRole("Manager"));
 });
 // builder.Services.AddControllers();
+
+// Config signalR
+builder.Services.AddSignalR();
+
 void ExampleService()
 {
-    builder.Services.AddScoped<ExecutionTimeLogger>();
     builder.Services.AddScoped<CacheResourceFilter>();
+    builder.Services.AddScoped<CacheManager>();
     // builder.Services.AddControllers(opts =>
     // {
     //     opts.Filters.AddService<ExecutionTimeLogger>();
@@ -123,6 +136,9 @@ void ExampleService()
 ExampleService();
 
 var app = builder.Build();
+
+// Default exception handling middleware
+app.UseCustomExceptionMiddleware();
 
 // Example: inline middleware
 void Example()
@@ -143,11 +159,14 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    // app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<ChatHub>("/chatHub");
 
 // Add controllers
 app.MapControllers();
@@ -188,12 +207,12 @@ app.MapGet("/set-cookie", async (HttpContext ctx) =>
         new Claim(ClaimTypes.Name, "Phusomnia"),
         new Claim(ClaimTypes.Role, "User")
     };
-    
+
     var identity = new ClaimsIdentity(claims, "Cookies");
     var principal = new ClaimsPrincipal(identity);
-    
+
     await ctx.SignInAsync("Cookies", principal);
-        
+
     Console.WriteLine("OK");
     return Results.Ok("Logged in with set cookie");
 });
