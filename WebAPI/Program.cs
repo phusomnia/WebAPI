@@ -91,21 +91,21 @@ builder.Services.AddDbContext<CustomIdentityDbContext>(options => options.UseMyS
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetValue<string>("Redis")));
 
 // Config auth service
-var secretKey = builder.Configuration["Jwt:SecretKey"]!;
 builder.Services.AddAuthentication(opts =>
 {
     opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(opts =>
 {
+    String secretKey = builder.Configuration["Jwt:SecretKey"] ?? "";
+    String issuer = builder.Configuration["Jwt:Issuer"] ?? "";
+    String audience = builder.Configuration["Jwt:Audience"] ?? "";
     opts.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = issuer,
+        ValidAudience = audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
     };
@@ -117,7 +117,8 @@ builder.Services.AddAuthorization(options =>
 {
     // options.AddPolicy("Admin", policy => policy.RequireClaim("CTO").RequireRole("Manager"));
 });
-// builder.Services.AddControllers();
+
+// builder.Services.AddControllers(otps => otps.Filters.Add<JwtFilter>());
 
 // Config signalR
 builder.Services.AddSignalR();
@@ -126,14 +127,13 @@ void ExampleService()
 {
     builder.Services.AddScoped<CacheResourceFilter>();
     builder.Services.AddScoped<CacheManager>();
-    // builder.Services.AddControllers(opts =>
-    // {
-    //     opts.Filters.AddService<ExecutionTimeLogger>();
-    //     opts.Filters.Add<CacheResourceFilter>();
-    // });
+    builder.Services.AddControllers(opts =>
+    {
+        opts.Filters.Add<CacheResourceFilter>();
+    });
     builder.Services.AddMemoryCache();
 }
-ExampleService();
+// ExampleService();
 
 var app = builder.Build();
 

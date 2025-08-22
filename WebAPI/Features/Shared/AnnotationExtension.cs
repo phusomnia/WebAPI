@@ -21,14 +21,19 @@ public static class AnnotationExtension
         params Assembly[] assemblies
     )
     {
-        foreach (var assesembly in assemblies)
+        var attributeTypes = new Type[]
         {
-            var types = assesembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract &&
-                                                        (t.GetCustomAttribute<ServiceAttribute>() != null ||
-                                                         t.GetCustomAttribute<RepositoryAttribute>() != null ||
-                                                         t.GetCustomAttribute<ComponentAttribute>() != null ||
-                                                         t.GetCustomAttribute<ConfigurationAttribute>() != null)
-            );
+            typeof(ServiceAttribute),
+            typeof(RepositoryAttribute),
+            typeof(ComponentAttribute),
+            typeof(ConfigurationAttribute)
+        };
+
+        foreach (var assembly in assemblies)
+        {
+            var types = assembly.GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract)
+                .Where(t => attributeTypes.Any(attrType => t.GetCustomAttribute(attrType) != null));
 
             foreach (var type in types)
             {

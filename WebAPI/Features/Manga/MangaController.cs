@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebAPI.Features.Manga;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/manga/")]
 public class MangaController : ControllerBase
 {
     private MangaService _mangaService;

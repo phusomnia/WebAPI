@@ -3,3 +3,5 @@ WebAPI/bin
 WebAPI/obj
 WebAPI/appsettings.Development.json
 WebAPI/.env
+WebAPI/migrate.sh
+WebAPI/curl.sh

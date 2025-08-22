@@ -34,16 +34,16 @@ public class JwtTokenProvider
         _accountRepository = accountRepository;
     }
 
-    public string generateAcessToken<TUser>(TUser user)
+    public string generateAcessToken<TUser>(TUser user) where TUser : class
     {
         Console.WriteLine(user.ToString());
         Console.WriteLine(Convert.ToInt32(_expireTime));
 
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, get(user, "id").ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, getValue(user, "id")?.ToString()!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Role, get(user, "roles").ToString())
+            new Claim(ClaimTypes.Role, getValue(user, "roles")?.ToString()!)
         };
         
         string secretKey = _key;
@@ -61,14 +61,14 @@ public class JwtTokenProvider
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string generateRefreshToken<TUser>(TUser user)
+    public string generateRefreshToken<TUser>(TUser user) where TUser : class
     {
-        var u = _accountRepository.findByUsername(get(user, "username").ToString());
+        var u = _accountRepository.findByUsername(getValue(user, "username")?.ToString()!);
         
         RefreshToken rt = new RefreshToken();
         rt.Id = Guid.NewGuid().ToString();
         rt.Token = Guid.NewGuid().ToString();
-        rt.AccountId = u.Id;
+        rt.AccountId = u?.Id;
         rt.ExpiryDate = DateTime.Now;
 
         _refreshTokenRepository.Add(rt);
@@ -76,19 +76,39 @@ public class JwtTokenProvider
         return Guid.NewGuid().ToString();
     }
 
-    public IEnumerable<Claim> extractAllClaims(String token)
+    public JwtSecurityToken? extractAllClaims(String token)
     {
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
-        return jwtToken.Claims;
+        return jwtToken;
     }
 
-    public object? get<TUser>(TUser obj, string propertyName)
+    public JwtPayload? extractPayload(string token)
+    {
+        return extractAllClaims(token)!.Payload;
+    }
+
+    public Object? getValue<TUser>(TUser obj, string propertyName) where TUser : class
     {
         var prop = typeof(TUser).GetProperties()
             .FirstOrDefault(p => 
                 string.Equals(p.Name, propertyName, StringComparison.OrdinalIgnoreCase
                 ));
         return prop?.GetValue(obj) ?? "";
+    }
+
+    public ClaimsPrincipal? validateToken(String token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        
+        return tokenHandler.ValidateToken(token, new TokenValidationParameters
+        {
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = _issuer,
+            ValidAudience = _audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_key)),
+            ClockSkew = TimeSpan.Zero
+        }, out _);
     }
 }
