@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace WebAPI.Example;
+namespace WebAPI.Filter;
 
 public class FileLoggerProvider : ILoggerProvider
 {
@@ -24,12 +24,16 @@ public class FileLoggerProvider : ILoggerProvider
     internal void WriteMessage(string message)
     {
         var basePath = AppDomain.CurrentDomain.BaseDirectory;
+        
         var dir = parentDir(basePath, 3);
-        Console.WriteLine(dir);
+        Console.WriteLine($"Dir: {dir}");
+        
         var fullPath = Path.Combine(dir, _filePath);
-        // Console.WriteLine(fullPath);
+        Console.WriteLine($"Fullpath: {fullPath}");
+        
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-        // File.AppendAllText(fullPath, message);
+        
+        File.AppendAllText(fullPath, message);
     }
 
     public string parentDir(string path, int level = 1)

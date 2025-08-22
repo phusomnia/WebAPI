@@ -4,8 +4,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using WebAPI.Context;
 using Microsoft.EntityFrameworkCore;
@@ -15,15 +13,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using StackExchange.Redis;
-using WebAPI;
 using WebAPI.Config;
 using WebAPI.Entities;
 using WebAPI.Example;
 using WebAPI.Example.Cache;
-using WebAPI.Features.Cache;
 using WebAPI.Features.RealTime;
+using WebAPI.Features.Shared;
+using WebAPI.Filter;
 using WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +32,7 @@ builder.Services.AddAnnotation(Assembly.GetExecutingAssembly());
 // ???
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddFile("app.log");
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Load only the development appsettings
@@ -53,7 +51,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Config allow snakecase
+// Config allow snake_case
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
@@ -86,7 +84,6 @@ builder.Services.AddDbContext<CustomIdentityDbContext>(options => options.UseMyS
     ServerVersion.AutoDetect(defaultConnection)
 ));
 
-// Config cache
 // Register Redis connection
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetValue<string>("Redis")));
 
@@ -118,8 +115,6 @@ builder.Services.AddAuthorization(options =>
     // options.AddPolicy("Admin", policy => policy.RequireClaim("CTO").RequireRole("Manager"));
 });
 
-// builder.Services.AddControllers(otps => otps.Filters.Add<JwtFilter>());
-
 // Config signalR
 builder.Services.AddSignalR();
 
@@ -149,7 +144,6 @@ void Example()
         await next();  // Pass to the next middleware
         Console.WriteLine("Outgoing response status: " + ctx.Response.StatusCode);
     });
-
     app.UseExampleMiddleware();
 }
 // Example();
@@ -159,7 +153,6 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
-    // app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -172,15 +165,25 @@ app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 app.MapGet("/", () => Results.Ok("Ok"))
     .ExcludeFromDescription();
-app.MapGet("/checkConnection", (AppDbContext ctx1, CustomIdentityDbContext ctx2) =>
+
+app.MapGet("/checkConnection", (
+    ILogger<Program> logger,
+    AppDbContext ctx1,
+    CustomIdentityDbContext ctx2
+    ) =>
 {
     var canConnect1 = ctx1.Database.CanConnect();
     var canConnect2 = ctx2.Database.CanConnect();
-    return new Dictionary<String, dynamic>
+    
+    var response = new Dictionary<String , Object>() 
     {
         ["App"] = canConnect1 ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
         ["Identity"] = canConnect2 ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
     };
+    
+    logger.LogInformation(CustomJson.json(response));
+    
+    return response;
 });
 app.MapPost("/test", ([FromQuery] BaseStatus res) =>
 {
@@ -197,11 +200,6 @@ app.MapPost("/test", ([FromQuery] BaseStatus res) =>
 
 app.MapGet("/set-cookie", async (HttpContext ctx) =>
 {
-    // ctx.Response.Cookies.Append("auth", "admin", new CookieOptions
-    // {
-    //     HttpOnly = true
-    // });
-
     var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, "Phusomnia"),

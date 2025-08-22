@@ -1,0 +1,26 @@
+[2025-08-22 08:16:20Z] [Information] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:3000
+[2025-08-22 08:16:20Z] [Information] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+[2025-08-22 08:16:20Z] [Information] Microsoft.Hosting.Lifetime: Hosting environment: Development
+[2025-08-22 08:16:20Z] [Information] Microsoft.Hosting.Lifetime: Content root path: /media/phusomnia/01DBC02F908DF560/Storage/Code/Github/WebAPI/WebAPI
+[2025-08-22 08:16:25Z] [Warning] Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware: Failed to determine the https port for redirect.
+[2025-08-22 08:16:27Z] [Information] Program: {
+  "App": {
+    "Value": "Ok",
+    "StatusCode": 200
+  },
+  "Identity": {
+    "Value": "Ok",
+    "StatusCode": 200
+  }
+}
+[2025-08-22 08:16:53Z] [Information] Program: {
+  "App": {
+    "Value": "Ok",
+    "StatusCode": 200
+  },
+  "Identity": {
+    "Value": "Ok",
+    "StatusCode": 200
+  }
+}
+[2025-08-22 08:17:01Z] [Information] Microsoft.Hosting.Lifetime: Application is shutting down...
