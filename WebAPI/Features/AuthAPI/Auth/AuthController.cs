@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using WebAPI.Core;
 using WebAPI.Example;
 using WebAPI.Features.Account;
+using WebAPI.Features.Shared;
 
 namespace WebAPI.Features.Auth;
 
@@ -13,9 +14,15 @@ namespace WebAPI.Features.Auth;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
-    public AuthController(AuthService authService)
+    private readonly ILogger<AuthController> _logger;
+    
+    public AuthController(
+        AuthService authService,
+        ILogger<AuthController> logger
+        )
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("auth/login")]
@@ -24,9 +31,8 @@ public class AuthController : ControllerBase
     )
     {
         Dictionary<String, Object> result = _authService.createToken(req);
-        String token = (String)result["access-token"];
-        
-        HttpContext.Response.Cookies.Append("jwt", token, new CookieOptions
+        var token = CustomJson.json(result, CustomJsonOptions.None);
+        HttpContext.Response.Cookies.Append("token", token, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
@@ -38,6 +44,8 @@ public class AuthController : ControllerBase
             "Login",
             result
         );
+        
+        _logger.LogInformation(CustomJson.json(response, CustomJsonOptions.WriteIndented));
         
         return response;
     }
@@ -58,7 +66,7 @@ public class AuthController : ControllerBase
         return response;
     }
     
-    [HttpPost("refresh-token")]
+    [HttpPost("refresh")]
     public ActionResult<Object> refreshTokenAPI(
         [FromBody] RefreshTokenDTO token
         )
@@ -74,16 +82,18 @@ public class AuthController : ControllerBase
         return response;
     }
 
-    [HttpGet("auth/dashboard")]
-    [TypeFilter(typeof(JwtFilter))]
+    [HttpGet("auth/testAdmin")]
+    // [TypeFilter(typeof(JwtFilter))]
+    [Authorize(Roles = "Admin")]
     public ActionResult<Object> AdminDashboard()
     {
         return "DashBoard";
     }
 
-    [HttpPost("auth")]
+    [HttpGet("auth/testUser")]
+    // [TypeFilter(typeof(JwtFilter))]
     [Authorize(Roles = "User")]
-    public ActionResult<dynamic> testAuthAPI()
+    public ActionResult<Object> userOptions()
     {
         return ":D";
     }

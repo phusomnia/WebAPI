@@ -27,7 +27,7 @@ public class CloudinaryConfig
         Cloudinary cloud = new Cloudinary(config);
         cloud.Api.Secure = true;
         
-        _logger.LogInformation(CustomJson.json(cloud));
+        _logger.LogInformation(CustomJson.json(cloud, CustomJsonOptions.WriteIndented));
         
         return cloud;
     }

@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
+using WebAPI.Annotation;
 
 namespace WebAPI.Example.Cache;
 
+[Component]
 public class CacheManager
 {
     private readonly IMemoryCache _memoryCache;

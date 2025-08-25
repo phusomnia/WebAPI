@@ -4,6 +4,7 @@ using WebAPI.Annotation;
 using WebAPI.Entities;
 using WebAPI.Features.Account;
 using WebAPI.Features.AuthService.RefreshToken;
+using WebAPI.Helper;
 
 namespace WebAPI.Features.Auth;
 
@@ -36,8 +37,10 @@ public class AuthService
         acc.Roles = AccountRole.User.ToString();
         acc.Username = account.username;
         acc.PasswordHash = _passwordHasher.HashPassword(acc, account.password);
+        
         var affectedRows = _accountRepository.Add(acc);
         if(affectedRows < 0) throw new ApplicationException("Failed to register account");
+        
         return acc;
     }
 
@@ -47,13 +50,16 @@ public class AuthService
         
         // manual version
         Entities.Account user = _accountRepository.findByUsername(req.username) ?? throw new ApplicationException("Invalid username");
-        var checkPassword = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash ?? "", req.password);
+        PasswordVerificationResult checkPassword = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash ?? "", req.password);
+        
         if(checkPassword == PasswordVerificationResult.Failed) throw new ApplicationException("Invalid password");
-        var accessToken = _tokenProvider.generateAcessToken(user);
-        var refreshToken = _tokenProvider.generateRefreshToken(user);
+        
+        String accessToken = _tokenProvider.generateAcessToken(user);
+        String refreshToken = _tokenProvider.generateRefreshToken(user);
+        
         return new Dictionary<String, Object>
         {
-            ["access-token"] = accessToken ,
+            ["access-token"]  = accessToken ,
             ["refresh-token"] = refreshToken 
         };
     }
@@ -61,11 +67,17 @@ public class AuthService
     public Dictionary<String, Object> refresh(RefreshTokenDTO dto)
     {
         var rt = _refreshTokenRepository.findByToken(dto.token);
-        Entities.Account user = _accountRepository.FindById(rt.AccountId!);
-        var refreshToken = _tokenProvider.generateRefreshToken(user);
+        
+        if (TimeConvert.Asia(DateTime.UtcNow) > rt.ExpiryDate) throw new Exception("Expired token is expired");
+
+        Entities.Account user = _accountRepository.FindById(rt.AccountId!)!;
+        
+        String accessToken = _tokenProvider.generateAcessToken(user);
+        
         return new Dictionary<String, Object>
         {
-            ["refresh-token"] = refreshToken 
+            ["access-token"]  = accessToken,
+            ["refresh-token"] = dto.token 
         };
     }
 }

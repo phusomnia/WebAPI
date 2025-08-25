@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebAPI.Repositories;
+namespace WebAPI.Shared;
 
 public class CrudRepository<TEntity, TKey> where TEntity : class
 {

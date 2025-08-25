@@ -3,4 +3,6 @@ WebAPI/bin
 WebAPI/obj
 WebAPI/appsettings.Development.json
 WebAPI/.env
-WebAPI/script/*.sh
+WebAPI/Script/*.sh
+WebAPI/Logs/
+WebAPI/app.log

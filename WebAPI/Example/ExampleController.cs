@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using WebAPI.Example.Cache;
+using WebAPI.Example.Validate;
 
 namespace WebAPI.Example;
 
@@ -78,6 +79,14 @@ public class ExampleController : ControllerBase
     public IActionResult handleException()
     {
         throw new Exception("Ex");
+    }
+
+    [HttpPost("/validate")]
+    public IActionResult validateDemo(ValidateDTO dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        return Ok("Ok");
     }
 
     private object GetDataFromListAsync()

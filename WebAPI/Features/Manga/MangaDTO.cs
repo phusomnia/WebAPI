@@ -4,7 +4,6 @@ namespace WebAPI.Features.Manga;
 
 public class MangaDTO
 {
-    [Required(ErrorMessage = "Title is required")]
-    [StringLength(255, MinimumLength = 1, ErrorMessage = "Title must be between 1 and 255 chars")]
+    [StringLength(255, MinimumLength = 3, ErrorMessage = "Title is required, characters are between 3 and 255")]
     public string Title { get; set; } = null!;
 }

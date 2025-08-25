@@ -1,6 +1,6 @@
 using WebAPI.Annotation;
 using WebAPI.Context;
-using WebAPI.Repositories;
+using WebAPI.Shared;
 
 namespace WebAPI.Features.AuthService.RefreshToken;
 

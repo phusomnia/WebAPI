@@ -34,7 +34,7 @@ public class CloudinaryStorage : CloudStorage
         };
         var uploadResult = _cloundinary.Upload(uploadParams);
         
-        _logger.LogInformation(CustomJson.json(uploadResult));
+        _logger.LogInformation(CustomJson.json(uploadResult, CustomJsonOptions.WriteIndented));
         
         return "OK";
     }
@@ -51,7 +51,7 @@ public class CloudinaryStorage : CloudStorage
             Invalidate = true
         };
         var editResult = _cloundinary.Upload(editParams);
-        _logger.LogInformation(CustomJson.json(editResult));
+        _logger.LogInformation(CustomJson.json(editResult, CustomJsonOptions.WriteIndented));
         return "Ok";
     }
 
@@ -59,7 +59,7 @@ public class CloudinaryStorage : CloudStorage
     {
         var deletionParams = new DeletionParams(publicId);
         var deletionResult = _cloundinary.Destroy(deletionParams);
-        _logger.LogInformation(CustomJson.json(deletionResult));
+        _logger.LogInformation(CustomJson.json(deletionResult, CustomJsonOptions.WriteIndented));
         return "Ok";
     }
 }

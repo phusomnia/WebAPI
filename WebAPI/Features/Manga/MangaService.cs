@@ -14,7 +14,7 @@ public class MangaService
 
     public dynamic getManga(string mangaId)
     {
-        return _mangaRepository.FindById(mangaId);
+        return _mangaRepository.FindById(mangaId)!;
     }
     
     public dynamic uploadManga(MangaDTO manga)
@@ -37,7 +37,7 @@ public class MangaService
     public dynamic deleteManga(String id)
     {
         var m = _mangaRepository.FindById(id);
-        if(_mangaRepository.Delete(m) < 0) throw new ApplicationException("Manga not found");
+        if(_mangaRepository.Delete(m!) < 0) throw new ApplicationException("Manga not found");
         return m;
     }
 }

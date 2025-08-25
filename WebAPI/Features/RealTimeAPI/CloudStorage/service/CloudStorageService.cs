@@ -23,7 +23,7 @@ public class CloudStorageService
 
     public Object edit(EditRequest req)
     {
-        Console.WriteLine($"{CustomJson.json(req.file)}\n{req.publicId}\n{req.transformation}");
+        Console.WriteLine($"{CustomJson.json(req.file, CustomJsonOptions.WriteIndented)}\n{req.publicId}\n{req.transformation}");
         var instance = _cloudStorageFactory.createService(req.cloudProvider);
         return instance.edit(req);
     }
