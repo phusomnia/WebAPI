@@ -1,30 +1,24 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using WebAPI.Context;
-using Microsoft.EntityFrameworkCore;
 using WebAPI.Annotation;
 using WebAPI.Core;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.AspNetCore.Identity;
-using StackExchange.Redis;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using WebAlvPI.Example.Validate;
 using WebAPI;
 using WebAPI.Config;
 using WebAPI.Entities;
 using WebAPI.Example;
 using WebAPI.Example.Cache;
-using WebAPI.Example.Validate;
+using WebAPI.Example.Identity;
 using WebAPI.Features.RealTime;
 using WebAPI.Features.Shared;
-using WebAPI.Filter;
 using WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,33 +27,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAnnotation(Assembly.GetExecutingAssembly());
 
+// Load only the development appsettings
 builder.Configuration.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
 
 LoggingConfig.configure(builder);
 NamingConventionConfig.configure(builder);
-
-// Load only the development appsettings
-
 DatabaseConfig.configure(builder);
-
-builder.Services.AddScoped<PasswordHasher<Account>>();
+// builder.Services.AddHttpContextAccessor();
+// builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 SecurityConfig.Configure(builder);
-
-// Config signalR
-builder.Services.AddSignalR();
-
-void ExampleService()
-{
-    builder.Services.AddScoped<CacheResourceFilter>();
-    builder.Services.AddScoped<CacheManager>();
-    builder.Services.AddControllers(opts =>
-    {
-        opts.Filters.Add<CacheResourceFilter>();
-    });
-    builder.Services.AddMemoryCache();
-}
-// ExampleService();
-
+ExampleConfig.configure(builder);
+RealTimeConfig.Configure(builder);
 
 builder.Services
     .AddControllers()
@@ -106,17 +85,14 @@ app.MapGet("/", () => Results.Ok("Ok"))
 
 app.MapGet("/checkConnection", (
     ILogger<Program> logger,
-    AppDbContext ctx1,
+    AppDbContext adc,
     CustomIdentityDbContext ctx2
     ) =>
 {
-    var canConnect1 = ctx1.Database.CanConnect();
-    var canConnect2 = ctx2.Database.CanConnect();
-    
     var response = new Dictionary<String , Object>() 
     {
-        ["App"] = canConnect1 ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
-        ["Identity"] = canConnect2 ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
+        ["App"] = adc.Database.CanConnect() ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
+        ["Identity"] = ctx2.Database.CanConnect() ? Results.Ok("Ok") : Results.BadRequest("Can't connect to database"),
     };
     
     logger.LogInformation(CustomJson.json(response, CustomJsonOptions.WriteIndented));

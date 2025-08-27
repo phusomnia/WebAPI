@@ -18,9 +18,9 @@ public class JwtTokenProvider
     private readonly string _key;
     private readonly string _issuer;
     private readonly string _audience;
-    private readonly String _ATexpireTime; 
+    private readonly String _atExpireTime; 
+    private readonly String _rtExpireTime; 
     
-    private readonly String _RTexpireTime; 
     
     private readonly RefreshTokenRepository _refreshTokenRepository;
     private readonly AccountRepository _accountRepository;
@@ -31,15 +31,16 @@ public class JwtTokenProvider
         AccountRepository accountRepository
         )
     {
-        var ATtime = new DataTable().Compute(config["Jwt:AT_ExpiryInMillisecond"], null).ToString();
-        var RTtime = new DataTable().Compute(config["Jwt:RT_ExpiryInMillisecond"], null).ToString();
-        _key = config["Jwt:SecretKey"] ?? "";
-        _issuer = config["Jwt:Issuer"] ?? "";
-        _audience = config["Jwt:Audience"] ?? "";
-        _ATexpireTime = ATtime ?? "";
+        var atTime = new DataTable().Compute(config["Jwt:atExpiryInMillisecond"], null).ToString();
+        var rtTime = new DataTable().Compute(config["Jwt:rtExpiryInMillisecond"], null).ToString();
+        
+        _key = config["Jwt:secretKey"] ?? "";
+        _issuer = config["Jwt:issuer"] ?? "";
+        _audience = config["Jwt:audience"] ?? "";
+        _atExpireTime = atTime ?? "";
+        _rtExpireTime = rtTime ?? "";
         _refreshTokenRepository = refreshTokenRepository;
         _accountRepository = accountRepository;
-        _RTexpireTime = RTtime ?? "";
     }
 
     public string generateAcessToken<TUser>(TUser user) where TUser : class
@@ -59,7 +60,7 @@ public class JwtTokenProvider
             issuer: _issuer,
             audience: _audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_ATexpireTime)),
+            expires: DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_atExpireTime)),
             signingCredentials: credentials
         );
         
@@ -70,7 +71,7 @@ public class JwtTokenProvider
     {
         var u = _accountRepository.findByUsername(getValue(user, "username")?.ToString()!);
 
-        var dt = DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_RTexpireTime));
+        var dt = DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_rtExpireTime));
         
         RefreshToken rt = new RefreshToken();
         rt.Id = Guid.NewGuid().ToString();

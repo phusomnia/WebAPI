@@ -10,14 +10,13 @@ public class RedisConfig
     private readonly IDatabase _db;
     private readonly ConfigurationOptions _conf;
 
-    public RedisConfig(
-        IConfiguration config
-    )
+    public RedisConfig(IConfiguration config)
     {
         String url = config["Redis:url"] ?? "";
         Int32 port = Int32.Parse(config["Redis:port"]!);
         String password = config["Redis:password"] ?? "";
         String user  = config["Redis:user"] ?? "";
+        
         Console.WriteLine($"Redis URL: {url}, Port: {port}, Password: {password}, User: {user}");
         _conf = new ConfigurationOptions
         {

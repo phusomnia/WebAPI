@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using WebAPI.Example.Cache;
 using WebAPI.Example.Validate;
+using WebAPI.Filter;
 
 namespace WebAPI.Example;
 
@@ -36,11 +37,11 @@ public class ExampleController : ControllerBase
     }
 
     [HttpGet("/cache")]
-    [TypeFilter(typeof(CacheResourceFilter))]
-    public IActionResult Cache()
+    [TypeFilter(typeof(InMemoryCacheFilter))]
+    public async Task<IActionResult> Cache()
     {
-        var data = GetDataFromListAsync();
-        return Ok(data);
+        // var data = GetDataFromListAsync();
+        return Ok("Duma");
     }
 
     [HttpGet("/error")]
