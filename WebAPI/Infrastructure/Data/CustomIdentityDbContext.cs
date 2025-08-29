@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using WebAPI.Features.Account;
 
-namespace WebAPI.Context;
+namespace WebAPI.Infrastructure.Data;
 
 public class CustomIdentityDbContext : IdentityDbContext<IdentityUser>
 {

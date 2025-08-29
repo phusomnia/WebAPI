@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Features.RealTimeAPI.CloudStorage.dto;
 using WebAPI.Features.RealTimeAPI.CloudStorage.service;
-using WebAPI.Features.Shared;
 
 namespace WebAPI.Features.RealTimeAPI.CloudStorage.controller;
 

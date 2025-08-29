@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using WebAPI.Annotation;
+using WebAPI.Core.shared;
+using WebAPI.Core.utils;
 using WebAPI.Entities;
-using WebAPI.Features.Account;
-using WebAPI.Features.AuthService.RefreshToken;
-using WebAPI.Helper;
+using WebAPI.Features.AccAPI;
+using WebAPI.Features.AuthAPI.RefreshToken;
 
-namespace WebAPI.Features.Auth;
+namespace WebAPI.Features.AuthAPI.Auth;
 
 [Service]
 public class AuthService
@@ -14,70 +14,66 @@ public class AuthService
     private readonly JwtTokenProvider _tokenProvider;
     private readonly AccountRepository _accountRepository;
     private readonly RefreshTokenRepository _refreshTokenRepository;
-    private readonly PasswordHasher<Entities.Account> _passwordHasher;
 
     public AuthService(
         JwtTokenProvider tokenProvider,
         AccountRepository accountRepository,
-        RefreshTokenRepository refreshTokenRepository,
-        PasswordHasher<Entities.Account> passwordHasher
+        RefreshTokenRepository refreshTokenRepository
     )
     {
         _tokenProvider = tokenProvider;
         _accountRepository = accountRepository;
         _refreshTokenRepository = refreshTokenRepository;
-        _passwordHasher = passwordHasher;
     }
 
-    public Entities.Account registerAccount(AccountDTO account)
+    public Account registerAccount(AccountDTO account)
     {
-        // manual version
-        Entities.Account acc = new Entities.Account();
+        Account acc = new Account();
         acc.Id = Guid.NewGuid().ToString();
-        acc.Roles = AccountRole.User.ToString();
+        acc.RoleId = "2";
         acc.Username = account.username;
-        acc.PasswordHash = _passwordHasher.HashPassword(acc, account.password);
+        acc.PasswordHash = account.password;
+        Console.WriteLine(CustomJson.json(acc, CustomJsonOptions.None));
         
-        var affectedRows = _accountRepository.Add(acc);
+        var affectedRows = _accountRepository.add(acc);
         if(affectedRows < 0) throw new ApplicationException("Failed to register account");
         
         return acc;
     }
 
-    public Dictionary<String, Object> createToken(AccountDTO req)
+    public async Task<Dictionary<String, Object>> createToken(AccountDTO req)
     {
-        // identity version
+        var user = (await _accountRepository.findByUsernameAndRole(req.username)).First() ?? throw new ApplicationException("Invalid username");
+        Console.WriteLine(CustomJson.json(user, CustomJsonOptions.WriteIndented));
+        Boolean checkPassword = user["passwordHash"].ToString() == req.password;
         
-        // manual version
-        Entities.Account user = _accountRepository.findByUsername(req.username) ?? throw new ApplicationException("Invalid username");
-        PasswordVerificationResult checkPassword = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash ?? "", req.password);
+        if(!checkPassword) throw new ApplicationException("Invalid password");
         
-        if(checkPassword == PasswordVerificationResult.Failed) throw new ApplicationException("Invalid password");
-        
-        String accessToken = _tokenProvider.generateAcessToken(user);
+        String accessToken = await _tokenProvider.generateAcessToken(user);
         String refreshToken = _tokenProvider.generateRefreshToken(user);
         
-        return new Dictionary<String, Object>
-        {
-            ["access-token"]  = accessToken ,
-            ["refresh-token"] = refreshToken 
-        };
+        return await toDict(accessToken, refreshToken);
     }
 
-    public Dictionary<String, Object> refresh(RefreshTokenDTO dto)
+    public async Task<Dictionary<String, Object>> refreshToken(RefreshTokenDTO dto)
     {
         var rt = _refreshTokenRepository.findByToken(dto.token);
         
-        if (TimeConvert.Asia(DateTime.UtcNow) > rt.ExpiryDate) throw new Exception("Expired token is expired");
+        if (TimeUtils.AsiaTimeZone(DateTime.UtcNow) > rt.ExpiryDate) throw new Exception("Expired token is expired");
 
-        Entities.Account user = _accountRepository.FindById(rt.AccountId!)!;
+        var user = _accountRepository.findById(rt.AccountId);
         
-        String accessToken = _tokenProvider.generateAcessToken(user);
-        
-        return new Dictionary<String, Object>
+        String accessToken = await _tokenProvider.generateAcessToken(user);
+
+        return await toDict(accessToken, accessToken);
+    }
+    
+    public async Task<Dictionary<String, Object>> toDict(String accessToken, String refreshToken)
+    {
+        return new Dictionary<string, object>
         {
-            ["access-token"]  = accessToken,
-            ["refresh-token"] = dto.token 
+            ["access-token"] = accessToken,
+            ["refresh-token"] = refreshToken
         };
     }
 }

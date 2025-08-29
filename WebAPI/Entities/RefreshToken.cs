@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebAPI.Entities;
 
-[Table("RefreshToken")]
 public partial class RefreshToken
 {
     public string Id { get; set; } = null!;

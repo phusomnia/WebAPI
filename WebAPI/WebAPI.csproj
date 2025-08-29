@@ -38,9 +38,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Example\DesignPattern\" />
-      <Folder Include="Features\CacheAPI\InMem\" />
-      <Folder Include="Features\CacheAPI\Redis\" />
+      <Folder Include="Features\AuthAPI\handler\" />
       <Folder Include="Features\RealTimeAPI\Notification\" />
       <Folder Include="Infrastructure\Repository\" />
     </ItemGroup>

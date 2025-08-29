@@ -1,27 +1,27 @@
 using System.Data;
-using Microsoft.AspNetCore.Identity;
-using WebAPI.Annotation;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using WebAPI.Entities;
-using WebAPI.Features.Account;
-using WebAPI.Features.AuthService.RefreshToken;
-using WebAPI.Helper;
+using Newtonsoft.Json;
+using WebAPI.Annotation;
+using WebAPI.Core.handlers;
+using WebAPI.Core.shared;
+using WebAPI.Core.utils;
+using WebAPI.Features.AccAPI;
+using WebAPI.Features.AuthAPI.RefreshToken;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace WebAPI.Features.Auth;
+namespace WebAPI.Features.AuthAPI.Auth;
 
 [Component]
 public class JwtTokenProvider
 {
-    private readonly string _key;
-    private readonly string _issuer;
-    private readonly string _audience;
+    private readonly String _key;
+    private readonly String _issuer;
+    private readonly String _audience;
     private readonly String _atExpireTime; 
     private readonly String _rtExpireTime; 
-    
-    
     private readonly RefreshTokenRepository _refreshTokenRepository;
     private readonly AccountRepository _accountRepository;
     
@@ -43,43 +43,55 @@ public class JwtTokenProvider
         _accountRepository = accountRepository;
     }
 
-    public string generateAcessToken<TUser>(TUser user) where TUser : class
+    public async Task<String> generateAcessToken<TUser>(TUser user) where TUser : class
     {
+        var dictUser = ConverterUtils.toDict(user);
+        Console.WriteLine($"GenToken: {CustomJson.json(user, CustomJsonOptions.WriteIndented)}");
+
+        var permissions = (await _accountRepository.findByUsernameAndPermission(dictUser["username"].ToString())).Select(x => x["name"]);
+        
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, getValue(user, "id")?.ToString()!),
+            new Claim(JwtRegisteredClaimNames.Sub, dictUser["id"].ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Role, getValue(user, "roles")?.ToString()!)
+            new Claim("role", dictUser["roleName"].ToString())
         };
+        
+        foreach (var permission in permissions) {
+            claims.Add(new Claim("permission", permission.ToString()));
+        }
         
         string secretKey = _key;
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         
-        var token = new JwtSecurityToken(
+        var tokenDes = new JwtSecurityToken(
             issuer: _issuer,
             audience: _audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_atExpireTime)),
             signingCredentials: credentials
         );
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.WriteToken(tokenDes);
         
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return jwtToken;
     }
 
-    public string generateRefreshToken<TUser>(TUser user) where TUser : class
+    public String generateRefreshToken<TUser>(TUser user) where TUser : class
     {
         var u = _accountRepository.findByUsername(getValue(user, "username")?.ToString()!);
 
         var dt = DateTime.UtcNow.AddMilliseconds(Convert.ToInt32(_rtExpireTime));
         
-        RefreshToken rt = new RefreshToken();
+        Entities.RefreshToken rt = new Entities.RefreshToken();
         rt.Id = Guid.NewGuid().ToString();
         rt.Token = Guid.NewGuid().ToString();
         rt.AccountId = u?.Id;
-        rt.ExpiryDate = TimeConvert.Asia(dt);
+        rt.ExpiryDate = TimeUtils.AsiaTimeZone(dt);
         
-        _refreshTokenRepository.Add(rt);
+        _refreshTokenRepository.add(rt);
         
         return rt.Token;
     }

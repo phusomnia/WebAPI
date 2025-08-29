@@ -1,13 +1,13 @@
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
 using WebAPI.Core;
-using WebAPI.Example;
-using WebAPI.Features.Account;
-using WebAPI.Features.Shared;
+using WebAPI.core.dto;
+using WebAPI.Core.filters;
+using WebAPI.Core.shared;
+using WebAPI.Demo.permission;
+using WebAPI.Features.AccAPI;
 
-namespace WebAPI.Features.Auth;
+namespace WebAPI.Features.AuthAPI.Auth;
 
 [ApiController]
 [Route("/api/v1/")]
@@ -26,11 +26,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("auth/login")]
-    public ActionResult<object> loginAccountAPI(
+    public async Task<IActionResult> loginAccountAPI(
         [FromBody] AccountDTO req
     )
     {
-        Dictionary<String, Object> result = _authService.createToken(req);
+        var result = await _authService.createToken(req);
         var token = CustomJson.json(result, CustomJsonOptions.None);
         HttpContext.Response.Cookies.Append("token", token, new CookieOptions
         {
@@ -47,31 +47,31 @@ public class AuthController : ControllerBase
         
         _logger.LogInformation(CustomJson.json(response, CustomJsonOptions.WriteIndented));
         
-        return response;
+        return Ok(response);
     }
 
     [HttpPost("register")]
-    public ActionResult<object> registerAccountAPI(
+    public async Task<IActionResult> registerAccountAPI(
         [FromBody] AccountDTO req
     )
     {
         var result = _authService.registerAccount(req);
         
-        var response = new APIResponse<object>(
+        var response = new APIResponse<Object>(
             BaseStatus.Success,
             "Login",
             result
         );
 
-        return response;
+        return Ok(response);
     }
     
     [HttpPost("refresh")]
-    public ActionResult<Object> refreshTokenAPI(
+    public async Task<IActionResult> refreshTokenAPI(
         [FromBody] RefreshTokenDTO token
         )
     {
-        var result = _authService.refresh(token);
+        var result = _authService.refreshToken(token);
         
         var response = new APIResponse<Object>(
             BaseStatus.Success,
@@ -79,22 +79,21 @@ public class AuthController : ControllerBase
             result
         );
 
-        return response;
+        return Ok(response);
     }
 
-    [HttpGet("auth/testAdmin")]
-    // [TypeFilter(typeof(JwtFilter))]
+    [HttpGet("auth/secure-by-role")]
+    // [Authorize(Roles = "User")]
     [Authorize(Roles = "Admin")]
-    public ActionResult<Object> AdminDashboard()
+    public ActionResult<String> AdminDashboard()
     {
-        return "DashBoard";
+        return Redirect("http://localhost:3000/api/v1/auth/secure-by-permission");
     }
-
-    [HttpGet("auth/testUser")]
-    // [TypeFilter(typeof(JwtFilter))]
-    [Authorize(Roles = "User")]
-    public ActionResult<Object> userOptions()
+    
+    [HttpGet("auth/secure-by-permission")]
+    [Permission("Export")]
+    public ActionResult<Object> exportPDF()
     {
-        return ":D";
+        return "PDF is ok";
     }
 }

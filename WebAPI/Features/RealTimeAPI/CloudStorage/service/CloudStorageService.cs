@@ -1,7 +1,7 @@
 using WebAPI.Annotation;
+using WebAPI.Core.shared;
 using WebAPI.Features.RealTimeAPI.CloudStorage.controller;
 using WebAPI.Features.RealTimeAPI.CloudStorage.dto;
-using WebAPI.Features.Shared;
 
 namespace WebAPI.Features.RealTimeAPI.CloudStorage.service;
 

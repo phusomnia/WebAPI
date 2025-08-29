@@ -4,21 +4,23 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
-using WebAPI.Context;
 using WebAPI.Annotation;
 using WebAPI.Core;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using WebAlvPI.Example.Validate;
 using WebAPI;
 using WebAPI.Config;
+using WebAPI.Core.configs;
+using WebAPI.core.dto;
+using WebAPI.Core.handlers;
+using WebAPI.Core.shared;
 using WebAPI.Entities;
 using WebAPI.Example;
-using WebAPI.Example.Cache;
 using WebAPI.Example.Identity;
+using WebAPI.Features.MangaAPI;
 using WebAPI.Features.RealTime;
-using WebAPI.Features.Shared;
+using WebAPI.Infrastructure.Data;
 using WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,9 +35,6 @@ builder.Configuration.AddJsonFile("appsettings.Development.json", optional: fals
 LoggingConfig.configure(builder);
 NamingConventionConfig.configure(builder);
 DatabaseConfig.configure(builder);
-// builder.Services.AddHttpContextAccessor();
-// builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-builder.Services.AddTransient<IEmailSender, EmailSender>();
 SecurityConfig.Configure(builder);
 ExampleConfig.configure(builder);
 RealTimeConfig.Configure(builder);
@@ -51,19 +50,6 @@ var app = builder.Build();
 
 // Default exception handling middleware
 app.UseCustomExceptionMiddleware();
-
-// Example: inline middleware
-void Example()
-{
-    app.Use(async (ctx, next) =>
-    {
-        Console.WriteLine("Incoming request: " + ctx.Request.Path);
-        await next();  // Pass to the next middleware
-        Console.WriteLine("Outgoing response status: " + ctx.Response.StatusCode);
-    });
-    app.UseExampleMiddleware();
-}
-// Example();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

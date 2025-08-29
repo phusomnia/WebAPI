@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 using WebAPI.Features.Cache;
+using WebAPI.Features.CacheAPI.Redis;
 
 [ApiController]
 [Route("/api/v1/")]

@@ -1,6 +1,6 @@
 using CloudinaryDotNet;
 using WebAPI.Annotation;
-using WebAPI.Features.Shared;
+using WebAPI.Core.shared;
 
 namespace WebAPI.Features.RealTimeAPI.CloudStorage;
 
