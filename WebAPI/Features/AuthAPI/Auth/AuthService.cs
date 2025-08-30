@@ -5,6 +5,7 @@ using WebAPI.Core.utils;
 using WebAPI.Entities;
 using WebAPI.Features.AccAPI;
 using WebAPI.Features.AuthAPI.RefreshToken;
+using WebAPI.Features.AuthAPI.service;
 
 namespace WebAPI.Features.AuthAPI.Auth;
 
@@ -14,16 +15,19 @@ public class AuthService
     private readonly JwtTokenProvider _tokenProvider;
     private readonly AccountRepository _accountRepository;
     private readonly RefreshTokenRepository _refreshTokenRepository;
+    private readonly Pbkdf2PasswordHasher _pbkdf2PasswordHasher;
 
     public AuthService(
         JwtTokenProvider tokenProvider,
         AccountRepository accountRepository,
-        RefreshTokenRepository refreshTokenRepository
+        RefreshTokenRepository refreshTokenRepository,
+        Pbkdf2PasswordHasher pbkdf2PasswordHasher
     )
     {
         _tokenProvider = tokenProvider;
         _accountRepository = accountRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _pbkdf2PasswordHasher = pbkdf2PasswordHasher;
     }
 
     public Account registerAccount(AccountDTO account)
@@ -32,7 +36,7 @@ public class AuthService
         acc.Id = Guid.NewGuid().ToString();
         acc.RoleId = "2";
         acc.Username = account.username;
-        acc.PasswordHash = account.password;
+        acc.PasswordHash = _pbkdf2PasswordHasher.hashPassword(account.password);
         Console.WriteLine(CustomJson.json(acc, CustomJsonOptions.None));
         
         var affectedRows = _accountRepository.add(acc);
@@ -45,7 +49,7 @@ public class AuthService
     {
         var user = (await _accountRepository.findByUsernameAndRole(req.username)).First() ?? throw new ApplicationException("Invalid username");
         Console.WriteLine(CustomJson.json(user, CustomJsonOptions.WriteIndented));
-        Boolean checkPassword = user["passwordHash"].ToString() == req.password;
+        Boolean checkPassword = _pbkdf2PasswordHasher.verifyPassword(req.password, user["passwordHash"].ToString());
         
         if(!checkPassword) throw new ApplicationException("Invalid password");
         
